@@ -1,0 +1,131 @@
+pythonclass GameEngine:
+    """Класс, содержащий математические алгоритмы для угадывания чисел."""
+
+    def __init__(self, session):
+        """Инициализация движка со ссылкой на сессию для использования валидатора ввода."""
+        self.session = session  # Сохраняем ссылку на управляющую сессию
+
+    def binary_search_algorithm(self):
+        """Алгоритм 1: Бинарный поиск (деление пополам)."""
+        print("\n--- [Алгоритм 1: Бинарный поиск (деление пополам)] ---")
+        low = 1                                                                # Нижняя граница поиска
+        high = 10                                                              # Верхняя граница поиска
+        questions_count = 0                                                    # Счётчик вопросов в текущем раунде
+        
+        while low <= high:                                                     # Цикл сужения диапазона
+            if low == high:                                                    # Если осталось одно число
+                print(f"Вы загадали число {low}! (Задано вопросов: {questions_count})")
+                return                                                         # Завершаем алгоритм
+                
+            mid = (low + high) // 2                                            # Находим середину диапазона
+            questions_count += 1                                               # Увеличиваем счётчик вопросов
+            
+            # Запрашиваем ответ через валидатор сессии
+            if self.session.get_valid_answer(f"Ваше число больше {mid}? (да/нет): "):
+                low = mid + 1                                                  # Сужаем диапазон к большей половине
+            else:
+                high = mid                                                     # Сужаем диапазон к меньшей половине
+
+    def math_properties_algorithm(self):
+        """Алгоритм 2: Математические свойства (чётность и деление на 3) с защитой от обмана."""
+        print("\n--- [Алгоритм 2: Математические свойства (чётность и деление на 3)] ---")
+        possible_numbers = list(range(1, 11))                                  # Массив кандидатов [1..10] для проверки на ложь
+        questions_count = 0                                                    # Счётчик вопросов в текущем раунде
+        
+        # --- Вопрос 1: Чётность ---
+        is_even = self.session.get_valid_answer("Ваше число чётное? (да/нет): ")
+        questions_count += 1
+        possible_numbers = [x for x in possible_numbers if (x % 2 == 0) == is_even] # Фильтруем по чётности
+
+        # --- Вопрос 2: Деление на 3 ---
+        div_by_3 = self.session.get_valid_answer("Ваше число делится на 3 без остатка? (да/нет): ")
+        questions_count += 1
+        possible_numbers = [x for x in possible_numbers if (x % 3 == 0) == div_by_3] # Фильтруем по делимости на 3
+
+        # Проверка на обман №1
+        if not possible_numbers:
+            print(f"Обман обнаружен! Такого числа не существует. (Задано вопросов: {questions_count})")
+            return
+
+        if len(possible_numbers) == 1:                                         # Если число однозначно определено (5 или 6)
+            print(f"Вы загадали число {possible_numbers[0]}! (Задано вопросов: {questions_count})")
+            return
+
+        # --- Вопрос 3: Остаток 1 при делении на 3 ---
+        rem_1 = self.session.get_valid_answer("При делении вашего числа на 3 получается остаток 1? (да/нет): ")
+        questions_count += 1
+        possible_numbers = [x for x in possible_numbers if (x % 3 == 1) == rem_1] # Фильтруем по остатку
+
+        # Проверка на обман №2
+        if not possible_numbers:
+            print(f"Обман обнаружен! Вы запутались в ответах. (Задано вопросов: {questions_count})")
+            return
+
+        if len(possible_numbers) == 1:                                         # Если осталось одно число
+            print(f"Вы загадали число {possible_numbers[0]}! (Задано вопросов: {questions_count})")
+            return
+
+        # --- Вопрос 4: Сравнение с пятеркой ---
+        is_big = self.session.get_valid_answer("Ваше число больше 5? (да/нет): ")
+        questions_count += 1
+        possible_numbers = [x for x in possible_numbers if (x > 5) == is_big]  # Финальная фильтрация
+
+        # Проверка на обман №3
+        if not possible_numbers:
+            print(f"Обман обнаружен! Ответы противоречат друг другу. (Задано вопросов: {questions_count})")
+        else:
+            print(f"Вы загадали число {possible_numbers[0]}! (Задано вопросов: {questions_count})")
+
+
+class GameSession:
+    """Класс для управления игровым процессом, вводом пользователя и счётчиками."""
+
+    def __init__(self):
+        """Инициализация сессии игры."""
+        self.game_counter = 1                                                  # Счётчик раундов игры
+        self.engine = GameEngine(self)                                         # Создаем экземпляр движка, передавая ему себя
+
+    @staticmethod
+    def get_valid_answer(question_text):
+        """Универсальная защита от опечаток (валидатор ввода). Staticmethod, так как не меняет состояние объекта."""
+        while True:
+            ans = input(question_text).strip().lower()
+            if ans in ["да", "da"]:
+                return True
+            if ans in ["нет", "net"]:
+                return False
+            print("Ошибка: Пожалуйста, введите четко 'да' или 'нет'.")
+
+    def start(self):
+        """Запуск главного игрового цикла сессии."""
+        # Первоначальное приветствие при старте приложения
+        if not self.get_valid_answer("Привет! Хочешь, я угадаю число от 1 до 10? (да/нет): "):
+            print("Дай мне знать, когда передумаешь.")
+            return                                                             # Завершаем приложение
+
+        # Главный цикл раундов
+        while True:
+            print(f"\n================ ИГРА №{self.session_info()} ================")
+            print("Загадайте в уме число от 1 до 10.")
+            
+            # Определение алгоритма на основе чётности счётчика
+            if self.game_counter % 2 != 0:
+                self.engine.binary_search_algorithm()
+            else:
+                self.engine.math_properties_algorithm()
+                
+            # Финальный вопрос раунда
+            if not self.get_valid_answer("\nХочешь сыграть снова? (да/нет): "):
+                print("Дай мне знать, когда передумаешь.")
+                return                                                         # Полный выход из программы
+                
+            self.game_counter += 1                                             # Увеличиваем счётчик для смены алгоритма
+
+    def session_info(self):
+        """Возвращает текущий номер игры (демонстрация простого метода класса)."""
+        return self.game_counter
+
+
+if __name__ == "__main__":
+    session = GameSession()                                                    # Создаем объект игровой сессии
+    session.start()                                                            # 
