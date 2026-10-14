@@ -1,0 +1,119 @@
+python
+def get_valid_input(prompt_text):
+    """Вспомогательная функция для проверки корректности ввода знаков"""
+    while True:
+        user_input = input(prompt_text).strip()
+        if user_input in ['>', '<', '=']:
+            return user_input
+        print("❌ Ошибка ввода! Пожалуйста, введите только один из символов: '>', '<' или '='.")
+
+def guess_number_game():
+    game_counter = 0
+    
+    print("👋 Привет! Хочешь, я угадаю число от 1 до 10?")
+    start_answer = input("Ответ (да/нет): ").strip().lower()
+    
+    if start_answer not in ['да', 'д', 'yes', 'y']:
+        print("До новых встреч!")
+        return
+
+    while True:
+        game_counter += 1
+        print("-" * 50)
+        print(f"🎮 ЗАПУСК ИГРЫ №{game_counter}")
+        print("Загадайте число от 1 до 10, а я его угадаю!")
+        print("Отвечайте: \n'=' если угадал, \n'>' если ваше число больше, \n'<' если ваше число меньше.\n")
+        
+        low = 1
+        high = 10
+        attempts = 0
+        guessed_correctly = False
+
+        if game_counter % 2 != 0:
+            print("🤖 Режим: БИНАРНЫЙ ПОИСК (деление на 2) — запуск НЕЧЁТНЫЙ\n")
+            
+            while low <= high:
+                attempts += 1
+                guess = (low + high) // 2
+                
+                # Защита 1: Валидация ввода через функцию get_valid_input
+                user_input = get_valid_input(f"Попытка №{attempts}. Число {guess}? (>, <, =): ")
+
+                if user_input == '=':
+                    print(f"\n🎉 Ура! Число {guess} угадано за {attempts} поп(ытки/ок)!")
+                    guessed_correctly = True
+                    break
+                elif user_input == '>':
+                    low = guess + 1
+                elif user_input == '<':
+                    high = guess - 1
+
+                # Защита 2: Проверка логической непротиворечивости
+                if low > high:
+                    print(f"\n🛑 Ошибка логики! Вы указали, что число должно быть в диапазоне от {low} до {high}.")
+                    print("Такой диапазон невозможен. Кажется, кто-то запутался в ответах!")
+                    break
+
+        else:
+            print("🤖 Режим: ТЕРНАРНЫЙ ПОИСК (деление на 3) — запуск ЧЁТНЫЙ\n")
+            
+            while low <= high:
+                attempts += 1
+                step = (high - low) // 3
+                guess1 = low + step
+                guess2 = high - step
+                
+                if guess1 == guess2:
+                    guess2 = guess1 + 1 if guess1 < high else guess1
+
+                # Защита 1 для первой точки
+                user_input = get_valid_input(f"Попытка №{attempts}. Число {guess1}? (>, <, =): ")
+                
+                if user_input == '=':
+                    print(f"\n🎉 Ура! Число {guess1} угадано за {attempts} поп(ытки/ок)!")
+                    guessed_correctly = True
+                    break
+                elif user_input == '<':
+                    high = guess1 - 1
+                elif user_input == '>':
+                    # Переходим к проверке второй точки, если они не равны
+                    if guess1 != guess2 and low <= high:
+                        attempts += 1
+                        # Защита 1 для второй точки
+                        user_input2 = get_valid_input(f"Попытка №{attempts}. Число {guess2}? (>, <, =): ")
+                        
+                        if user_input2 == '=':
+                            print(f"\n🎉 Ура! Число {guess2} угадано за {attempts} поп(ытки/ок)!")
+                            guessed_correctly = True
+                            break
+                        elif user_input2 == '<':
+                            low = guess1 + 1
+                            high = guess2 - 1
+                        elif user_input2 == '>':
+                            low = guess2 + 1
+                    else:
+                        low = guess1 + 1
+
+                # Защита 2 для тернарного поиска
+                if low > high:
+                    print(f"\n🛑 Ошибка логики! Невозможный диапазон: от {low} до {high}.")
+                    print("Проверьте свои предыдущие ответы — в них закралось противоречие.")
+                    break
+        
+        # Диалог завершения раунда
+        if guessed_correctly:
+            play_again = input("\nСыграем ещё раз? (да/нет): ").strip().lower()
+            if play_again in ['да', 'д', 'yes', 'y']:
+                continue
+            else:
+                print("До новых встреч!")
+                break
+        else:
+            # Если раунд прерван из-за логической ошибки пользователя
+            play_again = input("\nДиапазон сломан. Попробуем снова сбросить игру? (да/нет): ").strip().lower()
+            if play_again not in ['да', 'д', 'yes', 'y']:
+                print("До новых встреч!")
+                break
+
+if __name__ == "__main__":
+    guess_number_game()

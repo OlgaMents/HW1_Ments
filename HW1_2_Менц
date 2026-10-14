@@ -1,0 +1,146 @@
+python
+# Базовый справочник коэффициентов (перевод из конкретной единицы в метры)
+UNITS_TO_METERS = {
+    'мм': 0.001,
+    'см': 0.01,
+    'дм': 0.1,
+    'м': 1.0,
+    'км': 1000.0
+}
+
+# Справочник для площади (перевод из квадратных единиц в квадратные метры)
+SQ_UNITS_TO_M2 = {
+    'мм²': 0.000001,
+    'см²': 0.0001,
+    'дм²': 0.01,
+    'м²': 1.0,
+    'км²': 1000000.0
+}
+
+def get_valid_unit(prompt_text, is_area=False):
+    """Диалоговое окно выбора единиц измерения (линейных или квадратных)"""
+    units_dict = SQ_UNITS_TO_M2 if is_area else UNITS_TO_METERS
+    valid_units = list(units_dict.keys())
+    
+    while True:
+        print(f"\n--- {prompt_text} ---")
+        for idx, unit in enumerate(valid_units, 1):
+            print(f"{idx} — {unit}")
+        
+        user_choice = input("Выберите номер варианта или введите единицу вручную: ").strip().lower()
+        
+        if user_choice.isdigit():
+            opt_idx = int(user_choice) - 1
+            if 0 <= opt_idx < len(valid_units):
+                return valid_units[opt_idx]
+        
+        # Приведение к правильному регистру для сверки текста (актуально для ² в площадях)
+        for unit in valid_units:
+            if user_choice == unit.lower() or user_choice == unit:
+                return unit
+                
+        print(f"❌ Некорректный выбор! Допустимы только варианты: {', '.join(valid_units)}")
+
+def get_valid_float(prompt_text):
+    """Функция проверки числового ввода сторон"""
+    while True:
+        try:
+            value = float(input(prompt_text).strip())
+            if value > 0:
+                return value
+            print("❌ Ошибка! Значение должно быть строго больше нуля.")
+        except ValueError:
+            print("❌ Ошибка ввода! Пожалуйста, введите число (например: 5 или 12.3).")
+
+def get_calculation_mode():
+    """Диалоговое окно для выбора режима работы программы"""
+    while True:
+        print("\n--- ЧТО ВЫ ХОТИТЕ ВЫЧИСЛИТЬ? ---")
+        print("1 — Периметр прямоугольника")
+        print("2 — Площадь прямоугольника")
+        choice = input("Введите номер режима (1 или 2): ").strip()
+        if choice in ['1', '2']:
+            return choice
+        print("❌ Ошибка ввода! Введите только 1 или 2.")
+
+def print_calculation_history(history):
+    """Функция вывода накопленной хронологии расчетов"""
+    print("\n📋 Хронология ваших вычислений в этой сессии:")
+    for step in history:
+        print(f"  • {step}")
+
+def geometry_calculator():
+    print("👋 Привет! Хочешь, я сделаю геометрические расчеты для прямоугольника?")
+    start_answer = input("Ответ (да/нет): ").strip().lower()
+    
+    if start_answer not in ['да', 'д', 'yes', 'y']:
+        print("До новых встреч!")
+        return
+
+    history = []
+
+    while True:
+        print("\n" + "="*50)
+        
+        # ШАГ 1: Выбор режима (Периметр или Площадь)
+        mode = get_calculation_mode()
+        
+        print("\nШАГ 2: Ввод параметров прямоугольника")
+        # Ввод стороны A
+        unit_a = get_valid_unit("Единица измерения для СТОРОНЫ A", is_area=False)
+        side_a = get_valid_float(f"Введите длину стороны A (в {unit_a}): ")
+        
+        # Ввод стороны B
+        unit_b = get_valid_unit("Единица измерения для СТОРОНЫ B", is_area=False)
+        side_b = get_valid_float(f"Введите длину стороны B (в {unit_b}): ")
+        
+        # Приведение введенных сторон к метрам (общий этап для обоих режимов)
+        side_a_meters = side_a * UNITS_TO_METERS[unit_a]
+        side_b_meters = side_b * UNITS_TO_METERS[unit_b]
+        
+        # РАЗВЕТВЛЕНИЕ НА РЕЖИМЫ РАСЧЕТА
+        if mode == '1':
+            # --- РЕЖИМ 1: РАСЧЕТ ПЕРИМЕТРА ---
+            unit_out = get_valid_unit("В каких единицах вывести ПЕРИМЕТР?", is_area=False)
+            
+            perimeter_meters = 2 * (side_a_meters + side_b_meters)
+            perimeter_final = perimeter_meters / UNITS_TO_METERS[unit_out]
+            
+            print("\n✅ РАСЧЕТ ПЕРИМЕТРА УСПЕШНО ЗАВЕРШЕН:")
+            print(f"   • Итоговый периметр: {perimeter_final:.4f} {unit_out}")
+            
+            log_entry = f"Периметр: A={side_a} {unit_a}, B={side_b} {unit_b} | Результат: P={perimeter_final:.4f} {unit_out}"
+            history.append(log_entry)
+            
+        elif mode == '2':
+            # --- РЕЖИМ 2: РАСЧЕТ ПЛОЩАДИ (С ЗАГЛУШКОЙ) ---
+            unit_out = get_valid_unit("В каких единицах вывести ПЛОЩАДЬ?", is_area=True)
+            
+            # =========================================================================
+            # 🛠️ ИНСТРУКЦИЯ ДЛЯ СНЯТИЯ ЗАГЛУШКИ:
+            # 1. Закомментируйте или удалите две строчки ниже (строки с заглушкой):
+            area_final = 0.0  # Временное значение заглушки
+            print("\n⚠️ ВНИМАНИЕ: Расчет площади временно недоступен (работает заглушка разработчика)!")
+            
+            # 2. Раскомментируйте код ниже (удалите символ '#' в начале следующих трех строк):
+            # area_m2 = side_a_meters * side_b_meters
+            # area_final = area_m2 / SQ_UNITS_TO_M2[unit_out]
+            # print("\n✅ РАСЧЕТ ПЛОЩАДИ УСПЕШНО ЗАВЕРШЕН:")
+            # =========================================================================
+            
+            print(f"   • Итоговая площадь: {area_final:.4f} {unit_out}")
+            
+            log_entry = f"Площадь (Тест): A={side_a} {unit_a}, B={side_b} {unit_b} | Результат: S={area_final:.4f} {unit_out}"
+            history.append(log_entry)
+
+        # Вывод хронологии
+        print_calculation_history(history)
+        
+        # Перезапуск раунда
+        play_again = input("\nСделать другой расчет? (да/нет): ").strip().lower()
+        if play_again not in ['да', 'д', 'yes', 'y']:
+            print("\n👋 До новых встреч!")
+            break
+
+if __name__ == "__main__":
+    geometry_calculator()
